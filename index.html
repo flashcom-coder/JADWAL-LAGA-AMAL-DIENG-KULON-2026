@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Jadwal Fun Match & Laga Amal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 px-4 py-3 shadow-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-600 p-2 rounded-lg text-white font-bold"><i class="fa-solid fa-futbol"></i></div>
+                <div>
+                    <h1 class="font-bold text-lg text-white">Fun Match Manager</h1>
+                    <p class="text-xs text-slate-400">Laga Amal & Jadwal Harian</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span id="adminStatus" class="text-xs bg-slate-700 text-slate-300 px-3 py-1 rounded-full"><i class="fa-solid fa-user-lock mr-1"></i> Mode Penonton</span>
+                <button onclick="toggleLoginModal()" id="loginBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-4 py-2 rounded-lg font-medium transition flex items-center space-x-1">
+                    <i class="fa-solid fa-right-to-bracket mr-1"></i> <span>Login Admin</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
+
+        <!-- Tabs Navigation -->
+        <div class="flex space-x-2 border-b border-slate-700 pb-2 overflow-x-auto">
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium text-sm transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-calendar-days"></i> <span>Jadwal Pertandingan</span>
+            </button>
+            <button onclick="switchTab('teams')" id="tab-teams" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-sm transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-shield-halved"></i> <span>Perpustakaan Tim</span>
+            </button>
+            <button onclick="switchTab('rules')" id="tab-rules" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-sm transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-book-open"></i> <span>Aturan & Ketentuan</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: SCHEDULE -->
+        <div id="content-schedule" class="space-y-6">
+            <!-- Admin Control Panel (Hidden by default) -->
+            <div id="adminPanel" class="hidden bg-slate-800 border border-emerald-500/30 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+                    <h2 class="text-lg font-bold text-emerald-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-gears"></i> <span>Panel Kontrol Admin</span>
+                    </h2>
+                    <span class="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/30">Akses Aktif</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Tambah Match Manual -->
+                    <div class="space-y-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <h3 class="font-semibold text-sm text-slate-200"><i class="fa-solid fa-plus-circle mr-1 text-emerald-400"></i> Tambah Pertandingan Manual</h3>
+                        <form id="matchForm" onsubmit="addMatch(event)" class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Tanggal</label>
+                                    <input type="date" id="matchDate" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Jam Main</label>
+                                    <input type="time" id="matchTime" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Tim Home</label>
+                                    <select id="homeTeam" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Tim Away</label>
+                                    <select id="awayTeam" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"></select>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg text-sm transition">Tambah ke Jadwal</button>
+                        </form>
+                    </div>
+
+                    <!-- Generator Otomatis 30 Hari -->
+                    <div class="space-y-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-semibold text-sm text-slate-200"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-purple-400"></i> Generator Otomatis 30 Hari</h3>
+                            <p class="text-xs text-slate-400 mt-1">Sistem akan otomatis merangkai jadwal laga amal beruntun dari daftar tim yang tersedia selama sebulan penuh.</p>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Mulai Tanggal</label>
+                                <input type="date" id="genStartDate" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                            </div>
+                            <button onclick="generate30DaysSchedule()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-medium py-2 rounded-lg text-sm transition flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-bolt"></i> <span>Generate Jadwal 30 Hari</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter & List Matchday -->
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-list text-emerald-400"></i> <span>Daftar Matchday Laga Amal</span>
+                    </h2>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <input type="text" id="searchMatch" oninput="renderMatches()" placeholder="Cari tim / tanggal..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500 w-full sm:w-64">
+                        <button onclick="resetMatchesData()" id="resetMatchBtn" class="hidden bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1.5 rounded-lg text-xs transition border border-red-500/30 whitespace-nowrap">Reset Data</button>
+                    </div>
+                </div>
+
+                <div id="matchListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dinamis render via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: TEAMS -->
+        <div id="content-teams" class="hidden space-y-6">
+            <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <div>
+                    <h2 class="text-base font-bold text-white">Perpustakaan Logo & Tim Peserta</h2>
+                    <p class="text-xs text-slate-400">Daftar klub atau komunitas yang terdaftar dalam fun match.</p>
+                </div>
+                <button onclick="openAddTeamModal()" id="addTeamBtn" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 rounded-lg font-medium transition flex items-center space-x-1">
+                    <i class="fa-solid fa-plus"></i> <span>Tambah Tim Baru</span>
+                </button>
+            </div>
+
+            <div id="teamListContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Dinamis render via JS -->
+            </div>
+        </div>
+
+        <!-- TAB 3: RULES -->
+        <div id="content-rules" class="hidden space-y-6">
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-file-contract text-emerald-400"></i> <span>Aturan & Ketentuan Fun Match</span>
+                    </h2>
+                    <button onclick="saveRules()" id="saveRulesBtn" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition">Simpan Perubahan</button>
+                </div>
+                <div id="rulesDisplay" class="prose prose-invert max-w-none text-slate-300 text-sm bg-slate-900 p-4 rounded-xl border border-slate-700 whitespace-pre-line">
+                    Memuat aturan...
+                </div>
+                <textarea id="rulesEditor" class="hidden w-full h-64 bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"></textarea>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Login Admin -->
+    <div id="loginModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-lock text-emerald-400"></i> <span>Login Administrator</span>
+                </h3>
+                <button onclick="toggleLoginModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Username Admin</label>
+                    <input type="text" id="adminUser" value="admin" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Password</label>
+                    <input type="password" id="adminPass" placeholder="Masukkan password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <p id="loginError" class="text-xs text-red-400 hidden">Username atau password salah!</p>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="toggleLoginModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-lg transition">Batal</button>
+                <button onclick="processLogin()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg font-medium transition">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Tim -->
+    <div id="teamModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white"><i class="fa-solid fa-shield mr-1 text-emerald-400"></i> Tambah Tim Baru</h3>
+                <button onclick="closeAddTeamModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveNewTeam(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Nama Tim / Klub</label>
+                    <input type="text" id="newTeamName" required placeholder="Contoh: Onde FC" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">URL Logo / Gambar (Link Icon)</label>
+                    <input type="url" id="newTeamLogo" required placeholder="https://example.com/logo.png" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeAddTeamModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-lg transition">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg font-medium transition">Simpan Tim</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Aplikasi -->
+    <script>
+        // Default Data Admin Credential
+        const ADMIN_CREDENTIALS = { user: "admin", pass: "dieng123" };
+        let isAdmin = false;
+
+        // Inisialisasi Data Default LocalStorage
+        let teams = JSON.parse(localStorage.getItem('fun_match_teams')) || [
+            { id: 1, name: "Onde FC", logo: "https://api.iconify.design/fluent-emoji-flat:shield.svg" },
+            { id: 2, name: "Dieng United", logo: "https://api.iconify.design/fluent-emoji-flat:soccer-ball.svg" },
+            { id: 3, name: "Bahari FC", logo: "https://api.iconify.design/fluent-emoji-flat:fire.svg" },
+            { id: 4, name: "Perseru Dieng", logo: "https://api.iconify.design/fluent-emoji-flat:star.svg" },
+            { id: 5, name: "Wonosobo Allstar", logo: "https://api.iconify.design/fluent-emoji-flat:lightning.svg" },
+            { id: 6, name: "Batur Selection", logo: "https://api.iconify.design/fluent-emoji-flat:crown.svg" }
+        ];
+
+        let matches = JSON.parse(localStorage.getItem('fun_match_schedule')) || [
+            { id: 1, date: "2026-10-01", time: "15:30", home: "Onde FC", away: "Dieng United", status: "Terjadwal" },
+            { id: 2, date: "2026-10-02", time: "16:00", home: "Bahari FC", away: "Perseru Dieng", status: "Terjadwal" }
+        ];
+
+        let rulesText = localStorage.getItem('fun_match_rules') || `1. Durasi Pertandingan: 2x35 menit dengan istirahat 10 menit.\n2. Sistem Fair Play: Mengutamakan silaturahmi, laga amal, dan penggalangan donasi sosial.\n3. Pendaftaran Tim: Setiap tim pendaftar wajib berkoordinasi dengan panitia lokal minimal H-2 sebelum matchday.\n4. Perlengkapan: Setiap tim wajib menyiapkan atribut/jersey sendiri serta menjunjung tinggi sportivitas.`;
+
+        // Set Default Date Inputs
+        document.getElementById('matchDate').valueAsDate = new Date();
+        document.getElementById('genStartDate').valueAsDate = new Date();
+
+        // Render Awal
+        renderTeams();
+        renderMatches();
+        document.getElementById('rulesDisplay').innerText = rulesText;
+        document.getElementById('rulesEditor').value = rulesText;
+        updateTeamDropdowns();
+
+        // Tab Switching
+        function switchTab(tab) {
+            ['schedule', 'teams', 'rules'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = "px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-sm transition flex items-center space-x-2 whitespace-nowrap";
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).className = "px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium text-sm transition flex items-center space-x-2 whitespace-nowrap";
+        }
+
+        // Login Modal Control
+        function toggleLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.toggle('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+        }
+
+        function processLogin() {
+            const u = document.getElementById('adminUser').value;
+            const p = document.getElementById('adminPass').value;
+            if(u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+                isAdmin = true;
+                toggleLoginModal();
+                updateAdminUI();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function updateAdminUI() {
+            const btn = document.getElementById('loginBtn');
+            const status = document.getElementById('adminStatus');
+            const adminPanel = document.getElementById('adminPanel');
+            const addTeamBtn = document.getElementById('addTeamBtn');
+            const saveRulesBtn = document.getElementById('saveRulesBtn');
+            const resetMatchBtn = document.getElementById('resetMatchBtn');
+
+            if(isAdmin) {
+                btn.innerHTML = `<i class="fa-solid fa-right-from-bracket mr-1"></i> <span>Logout Admin</span>`;
+                btn.onclick = logoutAdmin;
+                status.innerHTML = `<i class="fa-solid fa-shield-check mr-1 text-emerald-400"></i> Mode Admin`;
+                status.className = "text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/30";
+                adminPanel.classList.remove('hidden');
+                addTeamBtn.classList.remove('hidden');
+                saveRulesBtn.classList.remove('hidden');
+                resetMatchBtn.classList.remove('hidden');
+                
+                // Switch editor rules
+                document.getElementById('rulesDisplay').classList.add('hidden');
+                document.getElementById('rulesEditor').classList.remove('hidden');
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-right-to-bracket mr-1"></i> <span>Login Admin</span>`;
+                btn.onclick = toggleLoginModal;
+                status.innerHTML = `<i class="fa-solid fa-user-lock mr-1"></i> Mode Penonton`;
+                status.className = "text-xs bg-slate-700 text-slate-300 px-3 py-1 rounded-full";
+                adminPanel.classList.add('hidden');
+                addTeamBtn.classList.add('hidden');
+                saveRulesBtn.classList.add('hidden');
+                resetMatchBtn.classList.add('hidden');
+
+                document.getElementById('rulesDisplay').classList.remove('hidden');
+                document.getElementById('rulesEditor').classList.add('hidden');
+            }
+            renderMatches();
+            renderTeams();
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            updateAdminUI();
+        }
+
+        // Teams Management
+        function renderTeams() {
+            const container = document.getElementById('teamListContainer');
+            container.innerHTML = '';
+            teams.forEach(team => {
+                container.innerHTML += `
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center text-center space-y-2 relative group shadow-md">
+                        ${isAdmin ? `<button onclick="deleteTeam(${team.id})" class="absolute top-2 right-2 text-red-400 hover:text-red-300 bg-slate-900/80 p-1.5 rounded-full text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        <img src="${team.logo}" alt="${team.name}" class="w-14 h-14 object-contain bg-slate-900/50 p-2 rounded-xl" onerror="this.src='https://api.iconify.design/fluent-emoji-flat:shield.svg'">
+                        <span class="font-semibold text-xs text-white">${team.name}</span>
+                    </div>
+                `;
+            });
+        }
+
+        function updateTeamDropdowns() {
+            const homeSelect = document.getElementById('homeTeam');
+            const awaySelect = document.getElementById('awayTeam');
+            homeSelect.innerHTML = '';
+            awaySelect.innerHTML = '';
+            teams.forEach(t => {
+                homeSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+                awaySelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+            });
+            if(teams.length > 1) awaySelect.selectedIndex = 1;
+        }
+
+        function openAddTeamModal() { document.getElementById('teamModal').classList.remove('hidden'); }
+        function closeAddTeamModal() { document.getElementById('teamModal').classList.add('hidden'); }
+
+        function saveNewTeam(e) {
+            e.preventDefault();
+            const name = document.getElementById('newTeamName').value;
+            const logo = document.getElementById('newTeamLogo').value;
+            teams.push({ id: Date.now(), name, logo });
+            localStorage.setItem('fun_match_teams', JSON.stringify(teams));
+            renderTeams();
+            updateTeamDropdowns();
+            closeAddTeamModal();
+            e.target.reset();
+        }
+
+        function deleteTeam(id) {
+            if(confirm("Hapus tim ini dari perpustakaan?")) {
+                teams = teams.filter(t => t.id !== id);
+                localStorage.setItem('fun_match_teams', JSON.stringify(teams));
+                renderTeams();
+                updateTeamDropdowns();
+            }
+        }
+
+        // Match Management
+        function addMatch(e) {
+            e.preventDefault();
+            const date = document.getElementById('matchDate').value;
+            const time = document.getElementById('matchTime').value;
+            const home = document.getElementById('homeTeam').value;
+            const away = document.getElementById('awayTeam').value;
+
+            if(home === away) {
+                alert("Tim Home dan Away tidak boleh sama!");
+                return;
+            }
+
+            matches.push({ id: Date.now(), date, time, home, away, status: "Terjadwal" });
+            localStorage.setItem('fun_match_schedule', JSON.stringify(matches));
+            renderMatches();
+            alert("Pertandingan berhasil ditambahkan!");
+        }
+
+        function renderMatches() {
+            const container = document.getElementById('matchListContainer');
+            const keyword = document.getElementById('searchMatch').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filtered = matches.filter(m => m.home.toLowerCase().includes(keyword) || m.away.toLowerCase().includes(keyword) || m.date.includes(keyword));
+            
+            if(filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-sm">Belum ada jadwal pertandingan yang cocok.</div>`;
+                return;
+            }
+
+            filtered.sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+
+            filtered.forEach(m => {
+                const homeObj = teams.find(t => t.name === m.home) || { logo: 'https://api.iconify.design/fluent-emoji-flat:shield.svg' };
+                const awayObj = teams.find(t => t.name === m.away) || { logo: 'https://api.iconify.design/fluent-emoji-flat:shield.svg' };
+
+                container.innerHTML += `
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-lg space-y-4 relative flex flex-col justify-between">
+                        ${isAdmin ? `<button onclick="deleteMatch(${m.id})" class="absolute top-3 right-3 text-red-400 hover:text-red-300 bg-slate-900/80 p-1.5 rounded-full text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        
+                        <div class="flex justify-between items-center text-xs text-slate-400 border-b border-slate-700/60 pb-2 pr-6">
+                            <span><i class="fa-regular fa-calendar mr-1 text-emerald-400"></i> ${m.date}</span>
+                            <span><i class="fa-regular fa-clock mr-1 text-emerald-400"></i> ${m.time} WIB</span>
+                        </div>
+
+                        <div class="grid grid-cols-5 items-center text-center py-2">
+                            <div class="col-span-2 flex flex-col items-center space-y-2">
+                                <img src="${homeObj.logo}" class="w-12 h-12 object-contain bg-slate-900/40 p-1.5 rounded-xl">
+                                <span class="font-bold text-xs text-white truncate max-w-[100px]">${m.home}</span>
+                            </div>
+                            <div class="col-span-1 flex flex-col items-center justify-center">
+                                <span class="text-xs font-black text-slate-500 italic bg-slate-900 px-2 py-1 rounded-lg">VS</span>
+                            </div>
+                            <div class="col-span-2 flex flex-col items-center space-y-2">
+                                <img src="${awayObj.logo}" class="w-12 h-12 object-contain bg-slate-900/40 p-1.5 rounded-xl">
+                                <span class="font-bold text-xs text-white truncate max-w-[100px]">${m.away}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-700/60 text-xs">
+                            <span class="bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20 font-medium">${m.status}</span>
+                            <span class="text-slate-400"><i class="fa-solid fa-hand-holding-heart text-red-400 mr-1"></i> Laga Amal</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteMatch(id) {
+            if(confirm("Hapus jadwal pertandingan ini?")) {
+                matches = matches.filter(m => m.id !== id);
+                localStorage.setItem('fun_match_schedule', JSON.stringify(matches));
+                renderMatches();
+            }
+        }
+
+        function resetMatchesData() {
+            if(confirm("Reset semua jadwal yang tersimpan?")) {
+                matches = [];
+                localStorage.removeItem('fun_match_schedule');
+                renderMatches();
+            }
+        }
+
+        // Generator 30 Hari Otomatis
+        function generate30DaysSchedule() {
+            if(teams.length < 2) {
+                alert("Minimal harus ada 2 tim dalam perpustakaan untuk generate jadwal!");
+                return;
+            }
+
+            const startDateVal = document.getElementById('genStartDate').value;
+            let currentDate = startDateVal ? new Date(startDateVal) : new Date();
+            
+            matches = []; // Reset atau susun baru
+            const times = ["15:30", "16:30"];
+
+            for(let i = 0; i < 30; i++) {
+                // Pilih secara acak 2 tim berbeda untuk tiap hari
+                let t1Index = Math.floor(Math.random() * teams.length);
+                let t2Index;
+                do {
+                    t2Index = Math.floor(Math.random() * teams.length);
+                } while(t2Index === t1Index);
+
+                let dateString = currentDate.toISOString().split('T')[0];
+                
+                matches.push({
+                    id: Date.now() + i,
+                    date: dateString,
+                    time: times[i % times.length],
+                    home: teams[t1Index].name,
+                    away: teams[t2Index].name,
+                    status: "Terjadwal"
+                });
+
+                // Tambah 1 hari berikutnya
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            localStorage.setItem('fun_match_schedule', JSON.stringify(matches));
+            renderMatches();
+            alert("Berhasil meng-generate jadwal pertandingan otomatis untuk 30 hari ke depan!");
+        }
+
+        // Rules Management
+        function saveRules() {
+            rulesText = document.getElementById('rulesEditor').value;
+            localStorage.setItem('fun_match_rules', rulesText);
+            document.getElementById('rulesDisplay').innerText = rulesText;
+            alert("Aturan dan ketentuan berhasil disimpan!");
+        }
+    </script>
+</body>
+</html>
